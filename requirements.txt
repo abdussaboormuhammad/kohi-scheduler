@@ -1,0 +1,10 @@
+streamlit
+pandas
+numpy
+matplotlib
+requests
+# Model libraries pinned to the versions that trained
+# models/Hourly_Items_LightGBM_1.pkl (2026-07-13) — unpickling across
+# versions is not guaranteed.
+scikit-learn==1.8.0
+lightgbm==4.6.0
