@@ -194,8 +194,9 @@ def plot_week_heatmap(matrix: np.ndarray, week_start, week_end):
     ax.set_xticklabels(DAY_LABELS, fontsize=10)
     ax.set_yticks(range(len(HOUR_LABELS)))
     ax.set_yticklabels(HOUR_LABELS, fontsize=9)
+    # Hour labels mirrored left/right, day labels mirrored top/bottom
     ax.tick_params(left=True, right=True, labelleft=True, labelright=True,
-                   top=False, bottom=True)
+                   top=True, bottom=True, labeltop=True, labelbottom=True)
 
     for r in range(matrix.shape[0]):
         for c in range(matrix.shape[1]):
