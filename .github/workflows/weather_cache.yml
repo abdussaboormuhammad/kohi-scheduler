@@ -1,15 +1,17 @@
 name: Daily hourly weather cache
 
-# Goal: run once per day at 5:00 AM America/Chicago.
-# GitHub cron is UTC and ignores daylight saving, so we schedule both
-# candidate UTC times (5 AM CDT = 10:00 UTC, 5 AM CST = 11:00 UTC) and let a
-# guard step skip the run whose Central-time hour isn't 5. Exactly one of the
-# two fires per day, year-round. Same pattern as the pastry planner repo.
+# Goal: refresh the cache once per day before Kohi opens (6 AM Central).
+# A single 09:30 UTC cron lands at 4:30 AM CDT / 3:30 AM CST — early
+# enough that even GitHub's cron start delays (often 30-70 min) keep the
+# run pre-open in both DST regimes, with no guard step needed.
+#
+# (The previous design — dual 10:00/11:00 UTC crons with a "Central hour
+# must be exactly 5" guard — silently skipped most days, because cron
+# delays pushed execution past the 5 o'clock hour.)
 on:
   schedule:
-    - cron: "0 10 * * *"  # 5 AM Central during CDT (summer, UTC-5)
-    - cron: "0 11 * * *"  # 5 AM Central during CST (winter, UTC-6)
-  workflow_dispatch: {}   # manual runs always proceed
+    - cron: "30 9 * * *"
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -18,27 +20,13 @@ jobs:
   fetch-and-commit:
     runs-on: ubuntu-latest
     steps:
-      - name: Check Central-time hour
-        id: guard
-        run: |
-          hour=$(TZ=America/Chicago date +%-H)
-          if [ "$hour" = "5" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "proceed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "proceed=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping: Central hour is $hour, not 5 (DST-mirror cron entry)."
-          fi
-
       - name: Checkout
-        if: steps.guard.outputs.proceed == 'true'
         uses: actions/checkout@v4
 
       - name: Fetch hourly business-hours weather
-        if: steps.guard.outputs.proceed == 'true'
         run: python3 fetch_weather_hourly_cache.py
 
       - name: Commit and push cache
-        if: steps.guard.outputs.proceed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
