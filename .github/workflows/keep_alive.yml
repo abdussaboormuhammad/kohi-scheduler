@@ -1,0 +1,31 @@
+name: Keep app awake
+
+# Streamlit Community Cloud sleeps apps after ~7 days without viewer
+# traffic; repo commits (like the daily weather cache) don't count.
+# This job opens the app in headless Chromium once a day — a real
+# browser session that resets the inactivity clock — and clicks the
+# wake-up button if the app already fell asleep.
+on:
+  schedule:
+    - cron: "30 11 * * *"  # daily, ~5:30/6:30 AM Central (exact hour irrelevant)
+  workflow_dispatch: {}
+
+jobs:
+  visit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Visit the app
+        run: python keep_alive.py
